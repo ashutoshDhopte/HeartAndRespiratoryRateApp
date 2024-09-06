@@ -5,12 +5,15 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,7 +25,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,6 +71,13 @@ private fun Content(modifier: Modifier = Modifier){
             .fillMaxSize()
             .padding(vertical = 10.dp, horizontal = 20.dp)
     ) {
+        Image(
+            painter = painterResource(R.drawable.logoimage),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = modifier.fillMaxWidth()
+                .size(250.dp)
+        )
         Card(
             modifier = modifier.weight(1f)){
             Column(
@@ -99,7 +112,7 @@ private fun Content(modifier: Modifier = Modifier){
                     )
                 }
                 HorizontalDivider(thickness = 1.dp)
-                Text("Symptoms / 5*")
+                Text("Symptoms")
                 Column(
                     modifier = modifier.padding(horizontal = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -111,7 +124,7 @@ private fun Content(modifier: Modifier = Modifier){
                                 modifier = modifier.weight(1f)
                             )
                             Text(
-                                "3*",
+                                "3 / 5",
                                 textAlign = TextAlign.End
                             )
                         }
@@ -129,7 +142,8 @@ private fun Content(modifier: Modifier = Modifier){
         ) {
             Text(
                 "Measure",
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             ) //todo -- go to next screen
         }
     }

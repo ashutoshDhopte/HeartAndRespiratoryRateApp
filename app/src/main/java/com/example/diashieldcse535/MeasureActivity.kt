@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -32,10 +32,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -80,11 +85,6 @@ private fun Home(){
     val navController = rememberNavController()
     val context = LocalContext.current
 
-    BackHandler {
-        Toast.makeText(context, "Back Pressed", Toast.LENGTH_LONG).show()
-        backAction(context, navController)
-    }
-
     DiaShieldCSE535Theme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -123,17 +123,13 @@ private fun Home(){
 
 private fun backAction(context: Context, navController: NavHostController){
 
+    Toast.makeText(context, currentFragment, Toast.LENGTH_LONG).show()
+
     if(currentFragment === FRAGMENT_HEART){
         navToMainActivity(context)
 
     }else{
-        navController.popBackStack()
-        currentFragment =
-            if(currentFragment === FRAGMENT_RESPIRATORY){
-                FRAGMENT_HEART
-            }else{
-                FRAGMENT_RESPIRATORY
-            }
+        navToNextFragment(navController, true)
     }
 }
 
@@ -161,6 +157,9 @@ private fun MeasureContent(context: Context, navController: NavHostController, i
             }
             composable(Fragments.RespiratoryFragment.route){
                 RespiratoryFragment(context)
+            }
+            composable(Fragments.SymptomFragment.route){
+                SymptomFragment(context)
             }
         }
         Card(
@@ -212,6 +211,7 @@ private fun MeasureContent(context: Context, navController: NavHostController, i
                 }
                 Button(
                     onClick = {
+                        Toast.makeText(context, currentFragment, Toast.LENGTH_LONG).show()
                         navToNextFragment(navController)
                     },
                     modifier = modifier
@@ -221,7 +221,8 @@ private fun MeasureContent(context: Context, navController: NavHostController, i
                 ) {
                     Text(
                         "Next",
-                        modifier = modifier.padding(5.dp)
+                        modifier = modifier.padding(5.dp),
+                        color = Color.White
                     )
                     Image(
                         painter = painterResource(R.drawable.baseline_arrow_forward_ios_24),
@@ -235,13 +236,21 @@ private fun MeasureContent(context: Context, navController: NavHostController, i
     }
 }
 
-private fun navToNextFragment(navController: NavHostController){
+private fun navToNextFragment(navController: NavHostController, isBackAction: Boolean = false){
 
     val navToFragment =
-        if(currentFragment === FRAGMENT_HEART){
-            FRAGMENT_RESPIRATORY
-        }else{
-            FRAGMENT_SYMPTOM
+        if(isBackAction){
+            if(currentFragment === FRAGMENT_RESPIRATORY){
+                FRAGMENT_HEART
+            }else{
+                FRAGMENT_RESPIRATORY
+            }
+        }else {
+            if (currentFragment === FRAGMENT_HEART) {
+                FRAGMENT_RESPIRATORY
+            } else {
+                FRAGMENT_SYMPTOM
+            }
         }
 
     fragmentMap[navToFragment]?.let {
@@ -279,7 +288,8 @@ private fun HeartFragment(context: Context, modifier: Modifier = Modifier){
             fontWeight = FontWeight.Bold,
             modifier = modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(5.dp)
+                .padding(5.dp),
+            fontSize = 20.sp
         )
         Column(
             modifier = modifier
@@ -354,7 +364,8 @@ private fun RespiratoryFragment(context: Context, modifier: Modifier = Modifier)
             fontWeight = FontWeight.Bold,
             modifier = modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(5.dp)
+                .padding(5.dp),
+            fontSize = 20.sp
         )
         Column(
             modifier = modifier
@@ -417,14 +428,75 @@ private fun RespiratoryFragment(context: Context, modifier: Modifier = Modifier)
     }
 }
 
+@Composable
+private fun SymptomFragment(context: Context, modifier: Modifier = Modifier){
+
+    val symptomKeys = listOf(
+        "Nausea", "Headache", "Diarrhea", "Soar throat",
+        "Fever", "Muscle ache", "Loss of smell and taste",
+        "Cough", "Shortness of breath", "Feeling tired"
+    )
+
+    val symptomMap = remember {
+        mutableStateMapOf<String, MutableState<Float>>().apply {
+            symptomKeys.forEach { key ->
+                this[key] = mutableStateOf(0f)
+            }
+        }
+    }
+
+    LazyColumn (
+        verticalArrangement = Arrangement.spacedBy(5.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(10.dp)
+    ) {
+        item{
+            Text(
+                "Rate your symptoms",
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                modifier = modifier.padding(vertical = 10.dp).fillMaxWidth()
+            )
+        }
+        items(10){ i ->
+            val symptom = symptomMap[symptomKeys[i]]
+            symptom?.let {
+                Card(
+                    modifier = modifier.padding(5.dp)
+                ){
+                    Column(
+                        modifier = modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                    ) {
+                        Row {
+                            Text(symptomKeys[i], modifier = modifier.weight(1f))
+                            Text("${symptom.value.toInt()} / 5", textAlign = TextAlign.End)
+                        }
+                        Slider(
+                            enabled = true,
+                            value = symptom.value,
+                            onValueChange = { symptomMap[symptomKeys[i]]?.value = it },
+                            steps = 5,
+                            valueRange = 1f..5f
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 sealed class Fragments(val route: String){
     data object HeartFragment: Fragments(FRAGMENT_HEART)
     data object RespiratoryFragment: Fragments(FRAGMENT_RESPIRATORY)
+    data object SymptomFragment: Fragments(FRAGMENT_SYMPTOM)
 }
 
 private val fragmentMap = mapOf(
     FRAGMENT_HEART to Fragments.HeartFragment,
-    FRAGMENT_RESPIRATORY to Fragments.RespiratoryFragment
+    FRAGMENT_RESPIRATORY to Fragments.RespiratoryFragment,
+    FRAGMENT_SYMPTOM to Fragments.SymptomFragment
 )
 
 private var currentFragment = FRAGMENT_HEART
@@ -433,4 +505,5 @@ private var currentFragment = FRAGMENT_HEART
 @Composable
 fun MeasurePreview() {
 
+    SymptomFragment(LocalContext.current)
 }
