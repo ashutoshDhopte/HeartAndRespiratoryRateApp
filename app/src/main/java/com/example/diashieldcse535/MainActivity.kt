@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -22,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,44 +82,50 @@ private fun Content(modifier: Modifier = Modifier){
         )
         Card(
             modifier = modifier.weight(1f)){
-            Column(
+            LazyColumn (
                 modifier = modifier
                     .weight(1f)
-                    .padding(20.dp)
-                    .verticalScroll(
-                        rememberScrollState(),
-                        true
-                    ),
+                    .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row{
-                    Text(
-                        "Heart rate",
-                        modifier = modifier.weight(1f)
-                    )
-                    Text(//todo -- value from db
-                        "3456",
-                        textAlign = TextAlign.End
-                    )
+                item{
+                    Row{
+                        Text(
+                            "Heart rate",
+                            modifier = modifier.weight(1f)
+                        )
+                        Text(//todo -- value from db
+                            "3456",
+                            textAlign = TextAlign.End
+                        )
+                    }
                 }
-                HorizontalDivider(thickness = 1.dp)
-                Row{
-                    Text(
-                        "Respiratory rate",
-                        modifier = modifier.weight(1f)
-                    )
-                    Text(//todo -- value from db
-                        "3456",
-                        textAlign = TextAlign.End
-                    )
+                item {
+                    HorizontalDivider(thickness = 1.dp)
                 }
-                HorizontalDivider(thickness = 1.dp)
-                Text("Symptoms")
-                Column(
-                    modifier = modifier.padding(horizontal = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    repeat(10) {
+                item{
+                    Row{
+                        Text(
+                            "Respiratory rate",
+                            modifier = modifier.weight(1f)
+                        )
+                        Text(//todo -- value from db
+                            "3456",
+                            textAlign = TextAlign.End
+                        )
+                    }
+                }
+                item {
+                    HorizontalDivider(thickness = 1.dp)
+                }
+                item{
+                    Text("Symptoms")
+                }
+                items(count = 10){ i ->
+                    Column(
+                        modifier = modifier.padding(horizontal = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         Row { //todo -- this will be a list and value from db
                             Text(
                                 "Dizziness",

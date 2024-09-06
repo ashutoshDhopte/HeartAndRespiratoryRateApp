@@ -60,6 +60,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.diashieldcse535.ui.theme.DiaShieldCSE535Theme
+import com.example.diashieldcse535.utils.Constants
 
 class MeasureActivity : ComponentActivity() {
 
@@ -122,8 +123,6 @@ private fun Home(){
 }
 
 private fun backAction(context: Context, navController: NavHostController){
-
-    Toast.makeText(context, currentFragment, Toast.LENGTH_LONG).show()
 
     if(currentFragment === FRAGMENT_HEART){
         navToMainActivity(context)
@@ -211,7 +210,6 @@ private fun MeasureContent(context: Context, navController: NavHostController, i
                 }
                 Button(
                     onClick = {
-                        Toast.makeText(context, currentFragment, Toast.LENGTH_LONG).show()
                         navToNextFragment(navController)
                     },
                     modifier = modifier
@@ -431,15 +429,9 @@ private fun RespiratoryFragment(context: Context, modifier: Modifier = Modifier)
 @Composable
 private fun SymptomFragment(context: Context, modifier: Modifier = Modifier){
 
-    val symptomKeys = listOf(
-        "Nausea", "Headache", "Diarrhea", "Soar throat",
-        "Fever", "Muscle ache", "Loss of smell and taste",
-        "Cough", "Shortness of breath", "Feeling tired"
-    )
-
     val symptomMap = remember {
         mutableStateMapOf<String, MutableState<Float>>().apply {
-            symptomKeys.forEach { key ->
+            Constants.Symptom.symptomKeys.forEach { key ->
                 this[key] = mutableStateOf(0f)
             }
         }
@@ -461,7 +453,7 @@ private fun SymptomFragment(context: Context, modifier: Modifier = Modifier){
             )
         }
         items(10){ i ->
-            val symptom = symptomMap[symptomKeys[i]]
+            val symptom = symptomMap[Constants.Symptom.symptomKeys[i]]
             symptom?.let {
                 Card(
                     modifier = modifier.padding(5.dp)
@@ -470,13 +462,13 @@ private fun SymptomFragment(context: Context, modifier: Modifier = Modifier){
                         modifier = modifier.padding(horizontal = 20.dp, vertical = 10.dp)
                     ) {
                         Row {
-                            Text(symptomKeys[i], modifier = modifier.weight(1f))
+                            Text(Constants.Symptom.symptomKeys[i], modifier = modifier.weight(1f))
                             Text("${symptom.value.toInt()} / 5", textAlign = TextAlign.End)
                         }
                         Slider(
                             enabled = true,
                             value = symptom.value,
-                            onValueChange = { symptomMap[symptomKeys[i]]?.value = it },
+                            onValueChange = { symptomMap[Constants.Symptom.symptomKeys[i]]?.value = it },
                             steps = 5,
                             valueRange = 1f..5f
                         )
