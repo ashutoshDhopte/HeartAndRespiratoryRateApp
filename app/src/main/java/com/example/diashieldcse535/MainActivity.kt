@@ -1,11 +1,10 @@
 package com.example.diashieldcse535
 
 import android.annotation.SuppressLint
-import android.app.StatusBarManager
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,24 +15,19 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.diashieldcse535.ui.theme.DiaShieldCSE535Theme
-import com.example.diashieldcse535.ui.theme.Purple40
-import com.example.diashieldcse535.ui.theme.Purple80
 
 class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -48,10 +42,8 @@ class MainActivity : ComponentActivity() {
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun Home(){
-    DiaShieldCSE535Theme(
-        darkTheme = false,
-    ) {
+private fun Home(){
+    DiaShieldCSE535Theme {
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
@@ -64,7 +56,9 @@ fun Home(){
 }
 
 @Composable
-fun Content(modifier: Modifier = Modifier){
+private fun Content(modifier: Modifier = Modifier){
+
+    val context = LocalContext.current
 
     Column(
         modifier = modifier
@@ -126,7 +120,9 @@ fun Content(modifier: Modifier = Modifier){
             }
         }
         Button(
-            onClick = {},
+            onClick = {
+                context.startActivity(Intent(context, MeasureActivity::class.java))
+            },
             modifier = modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 10.dp)
@@ -142,6 +138,6 @@ fun Content(modifier: Modifier = Modifier){
 @Preview(showBackground = true)
 @Composable
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-fun Preview() {
+fun MainPreview() {
     Home()
 }
