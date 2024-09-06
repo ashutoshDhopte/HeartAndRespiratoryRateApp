@@ -128,7 +128,7 @@ private fun backAction(context: Context, navController: NavHostController){
         navToMainActivity(context)
 
     }else{
-        navToNextFragment(navController, true)
+        navToNextFragment(context, navController, true)
     }
 }
 
@@ -210,7 +210,7 @@ private fun MeasureContent(context: Context, navController: NavHostController, i
                 }
                 Button(
                     onClick = {
-                        navToNextFragment(navController)
+                        navToNextFragment(context, navController)
                     },
                     modifier = modifier
                         .weight(1f)
@@ -234,7 +234,7 @@ private fun MeasureContent(context: Context, navController: NavHostController, i
     }
 }
 
-private fun navToNextFragment(navController: NavHostController, isBackAction: Boolean = false){
+private fun navToNextFragment(context: Context, navController: NavHostController, isBackAction: Boolean = false){
 
     val navToFragment =
         if(isBackAction){
@@ -246,8 +246,11 @@ private fun navToNextFragment(navController: NavHostController, isBackAction: Bo
         }else {
             if (currentFragment === FRAGMENT_HEART) {
                 FRAGMENT_RESPIRATORY
-            } else {
+            } else if(currentFragment === FRAGMENT_RESPIRATORY) {
                 FRAGMENT_SYMPTOM
+            }else{
+                navToMainActivity(context)
+                return
             }
         }
 
