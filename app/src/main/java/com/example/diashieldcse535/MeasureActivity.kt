@@ -1,13 +1,13 @@
 package com.example.diashieldcse535
 
-import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,30 +18,37 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -50,10 +57,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.diashieldcse535.ui.theme.DiaShieldCSE535Theme
 
 class MeasureActivity : ComponentActivity() {
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        enableEdgeToEdge()
         setContent {
+
             Home()
         }
     }
@@ -63,25 +73,81 @@ private const val FRAGMENT_HEART = "heart"
 private const val FRAGMENT_RESPIRATORY = "respiratory"
 private const val FRAGMENT_SYMPTOM = "symptom"
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Home(){
-
-    DiaShieldCSE535Theme {
-        Scaffold(modifier = Modifier.fillMaxSize()) {
-            Content()
-        }
-    }
-}
-
-@Composable
-private fun Content(modifier: Modifier = Modifier){
 
     val navController = rememberNavController()
     val context = LocalContext.current
 
+    BackHandler {
+        Toast.makeText(context, "Back Pressed", Toast.LENGTH_LONG).show()
+        backAction(context, navController)
+    }
+
+    DiaShieldCSE535Theme {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                    title = {
+                        Text(
+                            "Context Monitoring",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = {
+                                backAction(context, navController)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Localized description"
+                            )
+                        }
+                    },
+                )
+            }
+        ) { innerPadding ->
+            MeasureContent(context, navController, innerModifier = Modifier.padding(innerPadding))
+        }
+    }
+}
+
+private fun backAction(context: Context, navController: NavHostController){
+
+    if(currentFragment === FRAGMENT_HEART){
+        navToMainActivity(context)
+
+    }else{
+        navController.popBackStack()
+        currentFragment =
+            if(currentFragment === FRAGMENT_RESPIRATORY){
+                FRAGMENT_HEART
+            }else{
+                FRAGMENT_RESPIRATORY
+            }
+    }
+}
+
+private fun navToMainActivity(context: Context){
+    context.startActivity(Intent(context, MainActivity::class.java)
+        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    )
+}
+
+@Composable
+private fun MeasureContent(context: Context, navController: NavHostController, innerModifier: Modifier, modifier: Modifier = Modifier){
+
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = innerModifier.fillMaxSize()
     ) {
         NavHost(
             navController = navController,
@@ -146,15 +212,7 @@ private fun Content(modifier: Modifier = Modifier){
                 }
                 Button(
                     onClick = {
-
-                        val navToFragment =
-                            if(currentFragment === FRAGMENT_HEART){
-                                FRAGMENT_RESPIRATORY
-                            }else{
-                                FRAGMENT_SYMPTOM
-                            }
-
-                        navigateFragment(navController, navToFragment)
+                        navToNextFragment(navController)
                     },
                     modifier = modifier
                         .weight(1f)
@@ -177,9 +235,16 @@ private fun Content(modifier: Modifier = Modifier){
     }
 }
 
-private fun navigateFragment(navController: NavHostController, route: String){
+private fun navToNextFragment(navController: NavHostController){
 
-    fragmentMap[route]?.let {
+    val navToFragment =
+        if(currentFragment === FRAGMENT_HEART){
+            FRAGMENT_RESPIRATORY
+        }else{
+            FRAGMENT_SYMPTOM
+        }
+
+    fragmentMap[navToFragment]?.let {
 
         navController.navigate(it.route) {
 
@@ -195,7 +260,7 @@ private fun navigateFragment(navController: NavHostController, route: String){
             // Restore state when re-selecting a previously selected item
             restoreState = true
 
-            currentFragment = route
+            currentFragment = navToFragment
         }
     }
 }
@@ -264,6 +329,14 @@ private fun HeartFragment(context: Context, modifier: Modifier = Modifier){
                 }
             }
         }
+        Text(
+            "4567",
+            fontSize = 30.sp,
+            modifier = modifier.padding(top = 10.dp, bottom = 50.dp)
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max),
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -333,6 +406,14 @@ private fun RespiratoryFragment(context: Context, modifier: Modifier = Modifier)
                 }
             }
         }
+        Text(
+            "4567",
+            fontSize = 30.sp,
+            modifier = modifier.padding(top = 10.dp, bottom = 50.dp)
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max),
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -351,5 +432,5 @@ private var currentFragment = FRAGMENT_HEART
 @Preview(showBackground = true)
 @Composable
 fun MeasurePreview() {
-    Home()
+
 }
