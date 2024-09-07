@@ -54,6 +54,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -65,7 +66,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,8 +95,6 @@ import com.example.diashieldcse535.ui.theme.DiaShieldCSE535Theme
 import com.example.diashieldcse535.utils.Constants
 import com.example.diashieldcse535.utils.MonitorUtil
 import com.example.diashieldcse535.utils.SharedViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.io.File
 
 private const val FRAGMENT_HEART = "heart"
@@ -679,8 +677,11 @@ private fun SymptomFragment(context: Context, modifier: Modifier = Modifier){
                             enabled = true,
                             value = symptom.value,
                             onValueChange = { symptomMap[Constants.Symptom.symptomKeys[i]]?.value = it },
-                            steps = 5,
-                            valueRange = 1f..5f
+                            steps = 4,
+                            valueRange = 0f..5f,
+                            colors = SliderDefaults.colors(
+                                inactiveTrackColor = MaterialTheme.colorScheme.inversePrimary
+                            )
                         )
                     }
                 }
@@ -719,7 +720,6 @@ private var currentOuterFragment = FRAGMENT_MEASURE
 @Composable
 fun MeasurePreview() {
 
-    CameraFragment(viewModel(), rememberNavController())
 }
 
 @Composable
