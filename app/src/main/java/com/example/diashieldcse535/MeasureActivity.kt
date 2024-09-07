@@ -88,6 +88,7 @@ import com.example.diashieldcse535.utils.Constants
 import com.example.diashieldcse535.utils.MonitorUtil
 import com.example.diashieldcse535.utils.SharedViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.io.File
 
 class MeasureActivity : ComponentActivity() {
@@ -202,6 +203,10 @@ private fun navToMainActivity(context: Context){
 private fun MeasureFragment(context: Context, navController: NavHostController, outerNavController: NavHostController,
                             innerModifier: Modifier, sharedViewModel: SharedViewModel, modifier: Modifier = Modifier){
 
+    var heartRateValue by remember { mutableIntStateOf(0) }
+    var respiratoryRateValue by remember { mutableIntStateOf(0) }
+    var coroutineScope = rememberCoroutineScope()
+
     Column(
         modifier = innerModifier.fillMaxSize()
     ) {
@@ -248,7 +253,7 @@ private fun MeasureFragment(context: Context, navController: NavHostController, 
                         modifier = modifier.size(30.dp)
                     )
                     Text(
-                        "4567",
+                        heartRateValue.toString(),
                         modifier = modifier.padding(5.dp)
                     )
                 }
@@ -265,13 +270,17 @@ private fun MeasureFragment(context: Context, navController: NavHostController, 
                         modifier = modifier.size(30.dp)
                     )
                     Text(
-                        "4567",
+                        respiratoryRateValue.toString(),
                         modifier = modifier.padding(5.dp)
                     )
                 }
                 Button(
                     onClick = {
                         navToNextFragment(context, navController)
+                        coroutineScope.launch {
+                            heartRateValue = sharedViewModel.heartRate
+                            respiratoryRateValue = sharedViewModel.respiratoryRate
+                        }
                     },
                     modifier = modifier
                         .weight(1f)
