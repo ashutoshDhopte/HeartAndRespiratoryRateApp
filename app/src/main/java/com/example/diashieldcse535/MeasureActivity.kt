@@ -5,6 +5,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventCallback
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -32,12 +37,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
@@ -75,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -90,6 +98,18 @@ import com.example.diashieldcse535.utils.SharedViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
+
+private const val FRAGMENT_HEART = "heart"
+private const val FRAGMENT_RESPIRATORY = "respiratory"
+private const val FRAGMENT_SYMPTOM = "symptom"
+private const val FRAGMENT_CAMERA = "camera"
+private const val FRAGMENT_MEASURE = "measure"
+private var recording: Recording? = null
+private var sensorManager: SensorManager? = null
+private var respRateListX = mutableListOf<Float>()
+private var respRateListY = mutableListOf<Float>()
+private var respRateListZ = mutableListOf<Float>()
+private var sensorEventListener: SensorEventListener? = MeasureActivity.AccelerometerSensor()
 
 class MeasureActivity : ComponentActivity() {
 
@@ -107,14 +127,20 @@ class MeasureActivity : ComponentActivity() {
             Manifest.permission.RECORD_AUDIO
         )
     }
-}
 
-private const val FRAGMENT_HEART = "heart"
-private const val FRAGMENT_RESPIRATORY = "respiratory"
-private const val FRAGMENT_SYMPTOM = "symptom"
-private const val FRAGMENT_CAMERA = "camera"
-private const val FRAGMENT_MEASURE = "measure"
-private var recording: Recording? = null
+    class AccelerometerSensor: SensorEventCallback(){
+
+        override fun onSensorChanged(event: SensorEvent?) {
+            super.onSensorChanged(event)
+
+            event?.let {
+                respRateListX.add(event.values[0])
+                respRateListY.add(event.values[1])
+                respRateListZ.add(event.values[2])
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -144,7 +170,7 @@ private fun Home(modifier: Modifier = Modifier){
                     navigationIcon = {
                         IconButton(
                             onClick = {
-                                backAction(context, navController)
+                                backAction(context, navController, sharedViewModel)
                             }
                         ) {
                             Icon(
@@ -179,7 +205,7 @@ private fun Home(modifier: Modifier = Modifier){
     }
 }
 
-private fun backAction(context: Context, navController: NavHostController){
+private fun backAction(context: Context, navController: NavHostController, sharedViewModel: SharedViewModel){
 
     if(currentOuterFragment === FRAGMENT_CAMERA){
         navToNextOuterFragment(navController)
@@ -205,7 +231,6 @@ private fun MeasureFragment(context: Context, navController: NavHostController, 
 
     var heartRateValue by remember { mutableIntStateOf(0) }
     var respiratoryRateValue by remember { mutableIntStateOf(0) }
-    var coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = innerModifier.fillMaxSize()
@@ -221,7 +246,7 @@ private fun MeasureFragment(context: Context, navController: NavHostController, 
                 HeartFragment(outerNavController, sharedViewModel)
             }
             composable(Fragments.RespiratoryFragment.route){
-                RespiratoryFragment(context)
+                RespiratoryFragment(context, sharedViewModel)
             }
             composable(Fragments.SymptomFragment.route){
                 SymptomFragment(context)
@@ -254,6 +279,7 @@ private fun MeasureFragment(context: Context, navController: NavHostController, 
                     )
                     Text(
                         heartRateValue.toString(),
+                        fontWeight = FontWeight.Bold,
                         modifier = modifier.padding(5.dp)
                     )
                 }
@@ -271,16 +297,15 @@ private fun MeasureFragment(context: Context, navController: NavHostController, 
                     )
                     Text(
                         respiratoryRateValue.toString(),
+                        fontWeight = FontWeight.Bold,
                         modifier = modifier.padding(5.dp)
                     )
                 }
                 Button(
                     onClick = {
                         navToNextFragment(context, navController)
-                        coroutineScope.launch {
-                            heartRateValue = sharedViewModel.heartRate
-                            respiratoryRateValue = sharedViewModel.respiratoryRate
-                        }
+                        heartRateValue = sharedViewModel.heartRate
+                        respiratoryRateValue = sharedViewModel.respiratoryRate
                     },
                     modifier = modifier
                         .weight(1f)
@@ -464,13 +489,7 @@ private fun HeartFragment(outerNavController: NavHostController, sharedViewModel
             }
         }
         AnimatedVisibility(isHeartRateProcessingValue) {
-            Text(
-                "Processing...",
-                textAlign = TextAlign.Center,
-                fontSize = 20.sp,
-                modifier = modifier.padding(20.dp)
-                    .fillMaxWidth(),
-            )
+            ProcessingMessage(modifier)
         }
         Text(
             heartRateValue.toString(),
@@ -486,7 +505,23 @@ private fun HeartFragment(outerNavController: NavHostController, sharedViewModel
 }
 
 @Composable
-private fun RespiratoryFragment(context: Context, modifier: Modifier = Modifier){
+private fun RespiratoryFragment(context: Context, sharedViewModel: SharedViewModel, modifier: Modifier = Modifier){
+
+    var respiratoryRateValue by remember { mutableIntStateOf(0) }
+    var isMeasuring by remember { mutableStateOf(false) }
+    var isProcessing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(sharedViewModel.respiratoryRate) {
+        respiratoryRateValue = sharedViewModel.respiratoryRate
+    }
+
+    LaunchedEffect(sharedViewModel.isRespiratoryRateMeasuring) {
+        isMeasuring = sharedViewModel.isRespiratoryRateMeasuring
+    }
+
+    LaunchedEffect(sharedViewModel.isRespiratoryRateProcessing) {
+        isProcessing = sharedViewModel.isRespiratoryRateProcessing
+    }
 
     Column(
         modifier = modifier
@@ -527,40 +562,78 @@ private fun RespiratoryFragment(context: Context, modifier: Modifier = Modifier)
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            ElevatedButton(
-                onClick = {
-                    Toast.makeText(context, "Clicked my Lungs", Toast.LENGTH_LONG).show()
-                },
-                shape = RoundedCornerShape(50.dp),
-                modifier = modifier.size(200.dp)
+            Column(
+                modifier = modifier.align(Alignment.Center)
             ) {
-                Column {
-                    Image(
-                        painter = painterResource(R.drawable.stethescope),
-                        contentDescription = null,
-                        modifier = modifier
-                            .padding(10.dp)
-                            .weight(1f),
-                        contentScale = ContentScale.Fit
-                    )
-                    Text(
-                        "Measure",
-                        modifier = modifier.padding(5.dp)
-                            .align(Alignment.CenterHorizontally),
-                        fontWeight = FontWeight.Bold
-                    )
+                ElevatedButton(
+                    onClick = {
+                        recordRespiratoryRate(context, sharedViewModel)
+                    },
+                    shape = RoundedCornerShape(50.dp),
+                    modifier = modifier.size(200.dp)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Column {
+                        Image(
+                            painter = painterResource(R.drawable.stethescope),
+                            contentDescription = null,
+                            modifier = modifier
+                                .padding(10.dp)
+                                .weight(1f),
+                            contentScale = ContentScale.Fit
+                        )
+                        Text(
+                            "Measure",
+                            modifier = modifier.padding(5.dp)
+                                .align(Alignment.CenterHorizontally),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                AnimatedVisibility(isMeasuring) {
+                    Button(
+                        onClick = {
+                            unRegisterSensorListener(sharedViewModel)
+                        },
+                        colors = ButtonDefaults.buttonColors(Color(0xFFC62828)),
+                        modifier = modifier.align(Alignment.CenterHorizontally)
+                            .fillMaxWidth()
+                            .wrapContentWidth()
+                            .padding(20.dp)
+                    ){
+                        Text(
+                            "Stop measuring",
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }
+        AnimatedVisibility(isProcessing) {
+            ProcessingMessage(modifier)
+        }
         Text(
-            "4567",
-            fontSize = 30.sp,
+            respiratoryRateValue.toString(),
+            fontSize = 40.sp,
             modifier = modifier.padding(top = 10.dp, bottom = 50.dp)
                 .fillMaxWidth()
                 .height(IntrinsicSize.Max),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1565C0)
         )
     }
+}
+
+@Composable
+private fun ProcessingMessage(modifier: Modifier = Modifier){
+    Text(
+        "Processing...",
+        textAlign = TextAlign.Center,
+        fontSize = 20.sp,
+        modifier = modifier.padding(20.dp)
+            .fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -646,7 +719,7 @@ private var currentOuterFragment = FRAGMENT_MEASURE
 @Composable
 fun MeasurePreview() {
 
-    HeartFragment(rememberNavController(), viewModel())
+    CameraFragment(viewModel(), rememberNavController())
 }
 
 @Composable
@@ -654,7 +727,7 @@ fun CameraFragment(sharedViewModel: SharedViewModel, outerNavController: NavHost
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val coroutineScope = rememberCoroutineScope()
+    var isRecording by remember { mutableStateOf(false) }
 
     val cameraController = remember {
         LifecycleCameraController(context).apply {
@@ -684,29 +757,57 @@ fun CameraFragment(sharedViewModel: SharedViewModel, outerNavController: NavHost
                 cameraController.unbind()
             }
         )
-
-        IconButton(
-            onClick = {
-                captureVideo(context, cameraController, coroutineScope, sharedViewModel, outerNavController)
-            },
+        AnimatedVisibility(
+            !isRecording,
             modifier = modifier.align(Alignment.BottomCenter)
-                .padding(30.dp)
-                .background(Color.White, CircleShape)
-                .size(70.dp)
         ) {
-            Icon(
-                painter = painterResource(R.drawable.baseline_camera_24),
-                contentDescription = null,
-                tint = Color.Red,
-                modifier = modifier.matchParentSize()
-                    .padding(2.dp)
-            )
+            IconButton(
+                onClick = {
+                    isRecording = !isRecording
+                    captureVideo(context, cameraController, sharedViewModel, outerNavController)
+                },
+                modifier = modifier.align(Alignment.BottomCenter)
+                    .padding(30.dp)
+                    .background(Color.White, CircleShape)
+                    .size(70.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_camera_24),
+                    contentDescription = null,
+                    tint = Color.Red,
+                    modifier = modifier.matchParentSize()
+                        .padding(2.dp)
+                )
+            }
+        }
+        AnimatedVisibility(
+            isRecording,
+            modifier = modifier.align(Alignment.BottomCenter)
+        ) {
+            IconButton(
+                onClick = {
+                    isRecording = !isRecording
+                    captureVideo(context, cameraController, sharedViewModel, outerNavController)
+                },
+                modifier = modifier.align(Alignment.BottomCenter)
+                    .padding(30.dp)
+                    .background(Color.White, CircleShape)
+                    .size(70.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_stop_24),
+                    contentDescription = null,
+                    tint = Color.Red,
+                    modifier = modifier.matchParentSize()
+                        .padding(2.dp)
+                )
+            }
         }
     }
 }
 
 @SuppressLint("MissingPermission")
-fun captureVideo(context: Context, cameraController: LifecycleCameraController, coroutineScope: CoroutineScope,
+fun captureVideo(context: Context, cameraController: LifecycleCameraController,
                  sharedViewModel: SharedViewModel, outerNavController: NavHostController) {
 
     if(recording != null){
@@ -754,4 +855,34 @@ private fun hasRequiredPermissions(context: Context): Boolean{
             it
         ) == PackageManager.PERMISSION_GRANTED
     }
+}
+
+private fun recordRespiratoryRate(context: Context, sharedViewModel: SharedViewModel){
+
+    sharedViewModel.respiratoryRate = 0
+    sharedViewModel.isRespiratoryRateMeasuring = true
+    sharedViewModel.isRespiratoryRateProcessing = false
+
+    if(sensorManager == null) {
+        sensorManager = getSystemService(context, SensorManager::class.java)
+    }
+
+    sensorEventListener?.let {
+        val sensor: Sensor? = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sensorManager?.registerListener(sensorEventListener, sensor, SensorManager.SENSOR_DELAY_NORMAL)
+    }
+}
+
+private fun unRegisterSensorListener(sharedViewModel: SharedViewModel){
+
+    sharedViewModel.isRespiratoryRateMeasuring = false
+    sharedViewModel.isRespiratoryRateProcessing = true
+
+    sensorManager?.unregisterListener(sensorEventListener)
+
+    sharedViewModel.respiratoryRate = MonitorUtil.respiratoryRateCalculator(
+        respRateListX, respRateListY, respRateListZ
+    )
+
+    sharedViewModel.isRespiratoryRateProcessing = false
 }

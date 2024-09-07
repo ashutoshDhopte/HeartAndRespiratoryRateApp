@@ -14,4 +14,6 @@ class SharedViewModel: ViewModel() {
     var uri: Uri = Uri.EMPTY
 
     var respiratoryRate by mutableIntStateOf(0)
+    var isRespiratoryRateMeasuring by mutableStateOf(false)
+    var isRespiratoryRateProcessing by mutableStateOf(false)
 }
