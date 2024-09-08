@@ -607,7 +607,7 @@ private fun HeartFragment(outerNavController: NavHostController, sharedViewModel
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(10.dp)
+                .padding(vertical = 10.dp, horizontal = 20.dp)
         ) {
             Text(
                 "Instructions",
@@ -615,13 +615,36 @@ private fun HeartFragment(outerNavController: NavHostController, sharedViewModel
                 modifier = modifier.padding(vertical = 5.dp),
                 fontWeight = FontWeight.Bold
             )
-            repeat(5) {
-                Text(
-                    "Instructions dfghj fghj fghj ghj",
-                    color = Color.Gray,
-                    modifier = modifier.padding(vertical = 2.dp)
-                )
-            }
+            Text(
+                "1. Tap on the big button to the open camera.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
+            Text(
+                "2. Put a finger on the camera lens while covering the flash light.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
+            Text(
+                "3. Wait for 45 seconds, then stop the recording.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
+            Text(
+                "4. Wait for a moment to complete processing.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
+            Text(
+                "5. Tap on Next to record the respiratory rate.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
         }
         Box(
             contentAlignment = Alignment.Center,
@@ -704,7 +727,7 @@ private fun RespiratoryFragment(context: Context, sharedViewModel: SharedViewMod
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(10.dp)
+                .padding(vertical = 10.dp, horizontal = 20.dp)
         ) {
             Text(
                 "Instructions",
@@ -712,13 +735,36 @@ private fun RespiratoryFragment(context: Context, sharedViewModel: SharedViewMod
                 modifier = modifier.padding(vertical = 5.dp),
                 fontWeight = FontWeight.Bold
             )
-            repeat(5) {
-                Text(
-                    "Instructions dfghj fghj fghj ghj",
-                    color = Color.Gray,
-                    modifier = modifier.padding(vertical = 2.dp)
-                )
-            }
+            Text(
+                "1. Tap on the big button to measure the respiratory rate.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
+            Text(
+                "2. Lay down facing upwards and place the phone on the chest.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
+            Text(
+                "3. Wait for 45 seconds, then stop measuring.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
+            Text(
+                "4. Wait few moments to complete processing.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
+            Text(
+                "5. Tap on Next to rate the symptoms.",
+                color = Color.Gray,
+                modifier = modifier.padding(vertical = 2.dp),
+                textAlign = TextAlign.Justify
+            )
         }
         Box(
             contentAlignment = Alignment.Center,
