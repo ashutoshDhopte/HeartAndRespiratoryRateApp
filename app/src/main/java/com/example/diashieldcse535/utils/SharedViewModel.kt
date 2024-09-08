@@ -16,4 +16,19 @@ class SharedViewModel: ViewModel() {
     var respiratoryRate by mutableIntStateOf(0)
     var isRespiratoryRateMeasuring by mutableStateOf(false)
     var isRespiratoryRateProcessing by mutableStateOf(false)
+
+    var isLastFragment by mutableStateOf(false)
+
+    var isSavingInProgress by mutableStateOf(false)
+
+    var symptomNausea: Int = 0
+    var symptomHeadache: Int = 0
+    var symptomDiarrhea: Int = 0
+    var symptomSoarThroat: Int = 0
+    var symptomFever: Int = 0
+    var symptomMuscleAche: Int = 0
+    var symptomLossOfSmellAndTaste: Int = 0
+    var symptomCough: Int = 0
+    var symptomShortnessOfBreath: Int = 0
+    var symptomFeelingTired: Int = 0
 }

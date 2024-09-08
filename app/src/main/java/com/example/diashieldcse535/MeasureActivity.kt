@@ -12,6 +12,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,6 +24,10 @@ import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.camera.view.video.AudioConfig
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +40,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -49,8 +55,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -90,11 +98,18 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.room.Room
 import com.example.diashieldcse535.MeasureActivity.Companion.CAMERAX_PERMISSION
+import com.example.diashieldcse535.db.Databases
+import com.example.diashieldcse535.db.Monitor
 import com.example.diashieldcse535.ui.theme.DiaShieldCSE535Theme
 import com.example.diashieldcse535.utils.Constants
 import com.example.diashieldcse535.utils.MonitorUtil
 import com.example.diashieldcse535.utils.SharedViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 
 private const val FRAGMENT_HEART = "heart"
@@ -108,6 +123,7 @@ private var respRateListX = mutableListOf<Float>()
 private var respRateListY = mutableListOf<Float>()
 private var respRateListZ = mutableListOf<Float>()
 private var sensorEventListener: SensorEventListener? = MeasureActivity.AccelerometerSensor()
+private var db: Databases? = null
 
 class MeasureActivity : ComponentActivity() {
 
@@ -148,6 +164,12 @@ private fun Home(modifier: Modifier = Modifier){
     val outerNavController = rememberNavController()
     val context = LocalContext.current
     val sharedViewModel: SharedViewModel = viewModel()
+
+    db = Room.databaseBuilder(
+        context,
+        Databases::class.java,
+        "monitor-db"
+    ).build()
 
     DiaShieldCSE535Theme {
         Scaffold(
@@ -212,12 +234,16 @@ private fun backAction(context: Context, navController: NavHostController, share
             navToMainActivity(context)
 
         } else {
-            navToNextFragment(context, navController, true)
+            navToNextFragment(navController, sharedViewModel, true)
         }
     }
 }
 
 private fun navToMainActivity(context: Context){
+
+    currentFragment = FRAGMENT_HEART
+    currentOuterFragment = FRAGMENT_MEASURE
+
     context.startActivity(Intent(context, MainActivity::class.java)
         .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
     )
@@ -229,6 +255,16 @@ private fun MeasureFragment(context: Context, navController: NavHostController, 
 
     var heartRateValue by remember { mutableIntStateOf(0) }
     var respiratoryRateValue by remember { mutableIntStateOf(0) }
+
+    var isSavingInProgressValue by remember { mutableStateOf(false) }
+    LaunchedEffect(sharedViewModel.isSavingInProgress) {
+        isSavingInProgressValue = sharedViewModel.isSavingInProgress
+    }
+
+    var isLastFragmentValue by remember { mutableStateOf(false) }
+    LaunchedEffect(sharedViewModel.isLastFragment) {
+        isLastFragmentValue = sharedViewModel.isLastFragment
+    }
 
     Column(
         modifier = innerModifier.fillMaxSize()
@@ -256,96 +292,217 @@ private fun MeasureFragment(context: Context, navController: NavHostController, 
                 .wrapContentHeight()
                 .fillMaxWidth()
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = modifier
-                    .fillMaxWidth()
+            Column(
+                modifier = modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .align(Alignment.CenterHorizontally)
                     .height(100.dp)
-                    .padding(10.dp)
-            ){
-                Column(
-                    modifier = modifier
-                        .weight(1f)
-                        .height(IntrinsicSize.Max)
-                        .align(Alignment.CenterVertically),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.heartrate),
-                        contentDescription = null,
-                        modifier = modifier.size(30.dp)
+            ) {
+                if(isSavingInProgressValue) {
+                    LinearProgressIndicator(
+                        modifier = modifier.fillMaxWidth()
+                            .height(6.dp),
+                        color = MaterialTheme.colorScheme.secondary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     )
-                    Text(
-                        heartRateValue.toString(),
-                        fontWeight = FontWeight.Bold,
-                        modifier = modifier.padding(5.dp)
+                }else{
+                    HorizontalDivider(
+                        thickness = 6.dp,
+                        color = Color.Transparent
                     )
                 }
-                Column(
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = modifier
+                        .fillMaxWidth()
                         .weight(1f)
                         .height(IntrinsicSize.Max)
-                        .align(Alignment.CenterVertically),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.stethescope),
-                        contentDescription = null,
-                        modifier = modifier.size(30.dp)
-                    )
-                    Text(
-                        respiratoryRateValue.toString(),
-                        fontWeight = FontWeight.Bold,
-                        modifier = modifier.padding(5.dp)
-                    )
-                }
-                Button(
-                    onClick = {
-                        navToNextFragment(context, navController)
-                        heartRateValue = sharedViewModel.heartRate
-                        respiratoryRateValue = sharedViewModel.respiratoryRate
-                    },
-                    modifier = modifier
-                        .weight(1f)
-                        .wrapContentSize()
-                        .align(Alignment.CenterVertically)
-                ) {
-                    Text(
-                        "Next",
-                        modifier = modifier.padding(5.dp),
-                        color = Color.White
-                    )
-                    Image(
-                        painter = painterResource(R.drawable.baseline_arrow_forward_ios_24),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(Color.White),
-                        modifier = modifier.padding(5.dp)
-                    )
+                        .padding(10.dp)
+                ){
+                    Column(
+                        modifier = modifier
+                            .weight(1f)
+                            .height(IntrinsicSize.Max)
+                            .align(Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.heartrate),
+                            contentDescription = null,
+                            modifier = modifier.size(30.dp)
+                        )
+                        Text(
+                            heartRateValue.toString(),
+                            fontWeight = FontWeight.Bold,
+                            modifier = modifier.padding(5.dp)
+                        )
+                    }
+                    Column(
+                        modifier = modifier
+                            .weight(1f)
+                            .height(IntrinsicSize.Max)
+                            .align(Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.stethescope),
+                            contentDescription = null,
+                            modifier = modifier.size(30.dp)
+                        )
+                        Text(
+                            respiratoryRateValue.toString(),
+                            fontWeight = FontWeight.Bold,
+                            modifier = modifier.padding(5.dp)
+                        )
+                    }
+                    Column(
+                        modifier = modifier.weight(1f)
+                            .align(Alignment.CenterVertically)
+                    ) {
+                        AnimatedVisibility(
+                            !isLastFragmentValue,
+                            modifier = modifier.height(IntrinsicSize.Max)
+                                .width(IntrinsicSize.Max)
+                                .weight(1f)
+                                .align(Alignment.CenterHorizontally),
+                            exit = slideOutVertically() + fadeOut(),
+                            enter = slideInVertically() + fadeIn()
+                        ) {
+                            Button(
+                                onClick = {
+                                    navToNextFragment(navController, sharedViewModel)
+                                    heartRateValue = sharedViewModel.heartRate
+                                    respiratoryRateValue = sharedViewModel.respiratoryRate
+                                },
+                                modifier = modifier
+                                    .wrapContentSize()
+                                    .align(Alignment.CenterHorizontally)
+                            ) {
+                                Text(
+                                    "Next",
+                                    modifier = modifier.padding(5.dp),
+                                    color = Color.White
+                                )
+                                Image(
+                                    painter = painterResource(R.drawable.baseline_arrow_forward_ios_24),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(Color.White),
+                                    modifier = modifier.padding(5.dp)
+                                )
+                            }
+                        }
+                        AnimatedVisibility(
+                            isLastFragmentValue,
+                            modifier = modifier.height(IntrinsicSize.Max)
+                                .width(IntrinsicSize.Max)
+                                .weight(1f)
+                                .align(Alignment.CenterHorizontally),
+                            exit = slideOutVertically(
+                                targetOffsetY = { -it }
+                            ) + fadeOut(
+                                targetAlpha = -0.3f
+                            ),
+                            enter = slideInVertically(
+                                initialOffsetY = { -it }
+                            ) + fadeIn(
+                                initialAlpha = -0.3f
+                            )
+                        ) {
+                            Button(
+                                onClick = {
+                                    saveAndNavToMainActivity(context, sharedViewModel)
+                                },
+                                modifier = modifier
+                                    .wrapContentSize()
+                                    .align(Alignment.CenterHorizontally),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF43A047))
+                            ) {
+                                Text(
+                                    "Save",
+                                    modifier = modifier.padding(5.dp),
+                                    color = Color.White
+                                )
+                                Image(
+                                    painter = painterResource(R.drawable.baseline_save_24),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(Color.White),
+                                    modifier = modifier.padding(5.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-private fun navToNextFragment(context: Context, navController: NavHostController, isBackAction: Boolean = false){
+private fun saveAndNavToMainActivity(context: Context, sharedViewModel: SharedViewModel){
 
-    val navToFragment =
-        if(isBackAction){
-            if(currentFragment === FRAGMENT_RESPIRATORY){
-                FRAGMENT_HEART
-            }else{
-                FRAGMENT_RESPIRATORY
-            }
-        }else {
-            if (currentFragment === FRAGMENT_HEART) {
-                FRAGMENT_RESPIRATORY
-            } else if(currentFragment === FRAGMENT_RESPIRATORY) {
-                FRAGMENT_SYMPTOM
-            }else{
-                navToMainActivity(context)
-                return
-            }
+    sharedViewModel.isSavingInProgress = true
+
+    CoroutineScope(Dispatchers.IO).launch {
+
+        delay(1000)
+
+        try{
+
+            saveMonitorData(sharedViewModel)
+
+            navToMainActivity(context)
+
+            Toast.makeText(context, "Data saved!!", Toast.LENGTH_LONG).show()
+
+        }catch (e: Exception){
+            e.message?.let { Log.d("Room exception", it) }
+            Toast.makeText(context, "Failed to save data: ${e.message}", Toast.LENGTH_LONG).show()
+
+        }finally {
+            sharedViewModel.isSavingInProgress = false
         }
+    }
+}
+
+private fun saveMonitorData(sharedViewModel: SharedViewModel){
+
+    db?.let {
+
+        val monitor = Monitor(
+            heartRate = sharedViewModel.heartRate,
+            respiratoryRate = sharedViewModel.respiratoryRate,
+            symptomNausea = sharedViewModel.symptomNausea,
+            symptomHeadache = sharedViewModel.symptomHeadache,
+            symptomDiarrhea = sharedViewModel.symptomDiarrhea,
+            symptomSoarThroat = sharedViewModel.symptomSoarThroat,
+            symptomFever = sharedViewModel.symptomFever,
+            symptomMuscleAche = sharedViewModel.symptomMuscleAche,
+            symptomLossOfSmellAndTaste = sharedViewModel.symptomLossOfSmellAndTaste,
+            symptomCough = sharedViewModel.symptomCough,
+            symptomShortnessOfBreath = sharedViewModel.symptomShortnessOfBreath,
+            symptomFeelingTired = sharedViewModel.symptomFeelingTired
+        )
+
+        val dao = db?.monitorDao()
+        dao?.insertMonitorWithTimestamp(monitor)
+    }
+}
+
+private fun navToNextFragment(navController: NavHostController, sharedViewModel: SharedViewModel, isBackAction: Boolean = false){
+
+    var navToFragment = ""
+    if(isBackAction){
+        if(currentFragment === FRAGMENT_RESPIRATORY){
+            navToFragment = FRAGMENT_HEART
+        }else{
+            navToFragment = FRAGMENT_RESPIRATORY
+        }
+    }else {
+        if (currentFragment === FRAGMENT_HEART) {
+            navToFragment = FRAGMENT_RESPIRATORY
+        } else if(currentFragment === FRAGMENT_RESPIRATORY) {
+            navToFragment = FRAGMENT_SYMPTOM
+        }
+    }
 
     fragmentMap[navToFragment]?.let {
 
@@ -364,6 +521,8 @@ private fun navToNextFragment(context: Context, navController: NavHostController
             restoreState = true
 
             currentFragment = navToFragment
+
+            sharedViewModel.isLastFragment = currentFragment === FRAGMENT_SYMPTOM
         }
     }
 }
@@ -719,7 +878,7 @@ private var currentOuterFragment = FRAGMENT_MEASURE
 @Preview(showBackground = true)
 @Composable
 fun MeasurePreview() {
-
+    MeasureFragment(LocalContext.current, rememberNavController(), rememberNavController(), Modifier, viewModel())
 }
 
 @Composable
