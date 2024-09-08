@@ -12,6 +12,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -79,6 +80,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -950,10 +953,10 @@ private val outerFragmentMap = mapOf(
 
 private var currentOuterFragment = FRAGMENT_MEASURE
 
-@Preview(showBackground = true)
 @Composable
-fun MeasurePreview() {
-    MeasureFragment(LocalContext.current, rememberNavController(), rememberNavController(), Modifier, viewModel())
+@Preview(showBackground = true)
+fun MeasurePreview(modifier: Modifier = Modifier) {
+
 }
 
 @Composable
@@ -962,6 +965,7 @@ fun CameraFragment(sharedViewModel: SharedViewModel, outerNavController: NavHost
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var isRecording by remember { mutableStateOf(false) }
+    var cameraMessage by remember { mutableStateOf("Start") }
 
     val cameraController = remember {
         LifecycleCameraController(context).apply {
@@ -970,6 +974,25 @@ fun CameraFragment(sharedViewModel: SharedViewModel, outerNavController: NavHost
                 CameraController.IMAGE_CAPTURE or
                         CameraController.VIDEO_CAPTURE
             )
+        }
+    }
+
+    LaunchedEffect(isRecording) {
+
+        if(isRecording) {
+
+            object : CountDownTimer(45000, 1000) {
+
+                override fun onTick(p0: Long) {
+                    cameraMessage = "Auto-stops in ${(p0 / 1000).toInt()} s"
+                }
+
+                override fun onFinish() {
+                    cameraMessage = "Processing..."
+                    isRecording = !isRecording
+                    captureVideo(context, cameraController, sharedViewModel, outerNavController)
+                }
+            }.start()
         }
     }
 
@@ -991,50 +1014,66 @@ fun CameraFragment(sharedViewModel: SharedViewModel, outerNavController: NavHost
                 cameraController.unbind()
             }
         )
-        AnimatedVisibility(
-            !isRecording,
+        Column(
             modifier = modifier.align(Alignment.BottomCenter)
         ) {
-            IconButton(
-                onClick = {
-                    isRecording = !isRecording
-                    captureVideo(context, cameraController, sharedViewModel, outerNavController)
-                },
-                modifier = modifier.align(Alignment.BottomCenter)
-                    .padding(30.dp)
-                    .background(Color.White, CircleShape)
-                    .size(70.dp)
+            Text(
+                cameraMessage,
+                textAlign = TextAlign.Center,
+                modifier = modifier.background(
+                    color = Color.Black.copy(0.5f),
+                    RoundedCornerShape(5.dp)
+                ).align(Alignment.CenterHorizontally)
+                    .padding(10.dp),
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+            AnimatedVisibility(
+                !isRecording,
+                modifier = modifier.align(Alignment.CenterHorizontally)
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.baseline_camera_24),
-                    contentDescription = null,
-                    tint = Color.Red,
-                    modifier = modifier.matchParentSize()
-                        .padding(2.dp)
-                )
+                IconButton(
+                    onClick = {
+                        isRecording = !isRecording
+                        captureVideo(context, cameraController, sharedViewModel, outerNavController)
+                    },
+                    modifier = modifier.align(Alignment.CenterHorizontally)
+                        .padding(30.dp)
+                        .background(Color.White, CircleShape)
+                        .size(70.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_camera_24),
+                        contentDescription = null,
+                        tint = Color.Red,
+                        modifier = modifier.size(50.dp)
+                            .padding(2.dp)
+                    )
+                }
             }
-        }
-        AnimatedVisibility(
-            isRecording,
-            modifier = modifier.align(Alignment.BottomCenter)
-        ) {
-            IconButton(
-                onClick = {
-                    isRecording = !isRecording
-                    captureVideo(context, cameraController, sharedViewModel, outerNavController)
-                },
-                modifier = modifier.align(Alignment.BottomCenter)
-                    .padding(30.dp)
-                    .background(Color.White, CircleShape)
-                    .size(70.dp)
+            AnimatedVisibility(
+                isRecording,
+                modifier = modifier.align(Alignment.CenterHorizontally)
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.baseline_stop_24),
-                    contentDescription = null,
-                    tint = Color.Red,
-                    modifier = modifier.matchParentSize()
-                        .padding(2.dp)
-                )
+                IconButton(
+                    onClick = {
+                        isRecording = !isRecording
+                        captureVideo(context, cameraController, sharedViewModel, outerNavController)
+                    },
+                    modifier = modifier.align(Alignment.CenterHorizontally)
+                        .padding(30.dp)
+                        .background(Color.White, CircleShape)
+                        .size(70.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_stop_24),
+                        contentDescription = null,
+                        tint = Color.Red,
+                        modifier = modifier.size(50.dp)
+                            .padding(2.dp)
+                    )
+                }
             }
         }
     }
