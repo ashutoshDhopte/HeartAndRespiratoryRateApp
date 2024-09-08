@@ -755,13 +755,13 @@ private fun RespiratoryFragment(context: Context, sharedViewModel: SharedViewMod
                 fontWeight = FontWeight.Bold
             )
             Text(
-                "1. Tap on the big button to measure the respiratory rate.",
+                "1. Lay down facing upwards and place the phone on the chest.",
                 color = Color.Gray,
                 modifier = modifier.padding(vertical = 2.dp),
                 textAlign = TextAlign.Justify
             )
             Text(
-                "2. Lay down facing upwards and place the phone on the chest.",
+                "2. Tap on the big button to measure the respiratory rate.",
                 color = Color.Gray,
                 modifier = modifier.padding(vertical = 2.dp),
                 textAlign = TextAlign.Justify
