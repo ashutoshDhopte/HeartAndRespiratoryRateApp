@@ -19,5 +19,6 @@ interface Constants {
 
     companion object{
         val DATABASE_NAME = "monitor-db"
+        val MEASURING_TIME = 45000L
     }
 }

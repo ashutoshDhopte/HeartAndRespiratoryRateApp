@@ -80,8 +80,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -700,6 +698,7 @@ private fun RespiratoryFragment(context: Context, sharedViewModel: SharedViewMod
     var respiratoryRateValue by remember { mutableIntStateOf(0) }
     var isMeasuring by remember { mutableStateOf(false) }
     var isProcessing by remember { mutableStateOf(false) }
+    var timeRemaining by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(sharedViewModel.respiratoryRate) {
         respiratoryRateValue = sharedViewModel.respiratoryRate
@@ -711,6 +710,23 @@ private fun RespiratoryFragment(context: Context, sharedViewModel: SharedViewMod
 
     LaunchedEffect(sharedViewModel.isRespiratoryRateProcessing) {
         isProcessing = sharedViewModel.isRespiratoryRateProcessing
+    }
+
+    LaunchedEffect(isMeasuring) {
+
+        if(isMeasuring){
+
+            object: CountDownTimer(Constants.MEASURING_TIME, 1000){
+
+                override fun onTick(p0: Long) {
+                    timeRemaining = (p0 / 1000).toInt()
+                }
+
+                override fun onFinish() {
+                    unRegisterSensorListener(sharedViewModel)
+                }
+            }.start()
+        }
     }
 
     Column(
@@ -804,19 +820,35 @@ private fun RespiratoryFragment(context: Context, sharedViewModel: SharedViewMod
                     }
                 }
                 AnimatedVisibility(isMeasuring) {
-                    Button(
-                        onClick = {
-                            unRegisterSensorListener(sharedViewModel)
-                        },
-                        colors = ButtonDefaults.buttonColors(Color(0xFFC62828)),
-                        modifier = modifier.align(Alignment.CenterHorizontally)
-                            .fillMaxWidth()
-                            .wrapContentWidth()
-                            .padding(20.dp)
-                    ){
+                    Column(
+                        modifier = modifier.fillMaxWidth()
+                    ) {
+                        Button(
+                            onClick = {
+                                unRegisterSensorListener(sharedViewModel)
+                            },
+                            colors = ButtonDefaults.buttonColors(Color(0xFFC62828)),
+                            modifier = modifier.align(Alignment.CenterHorizontally)
+                                .fillMaxWidth()
+                                .wrapContentWidth()
+                                .padding(20.dp)
+                        ){
+                            Text(
+                                "Stop measuring",
+                                color = Color.White
+                            )
+                        }
                         Text(
-                            "Stop measuring",
-                            color = Color.White
+                            "Auto-stops in $timeRemaining s",
+                            textAlign = TextAlign.Center,
+                            modifier = modifier.background(
+                                color = Color.Black.copy(0.5f),
+                                RoundedCornerShape(5.dp)
+                            ).align(Alignment.CenterHorizontally)
+                                .padding(10.dp),
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -956,7 +988,7 @@ private var currentOuterFragment = FRAGMENT_MEASURE
 @Composable
 @Preview(showBackground = true)
 fun MeasurePreview(modifier: Modifier = Modifier) {
-
+    RespiratoryFragment(LocalContext.current, viewModel())
 }
 
 @Composable
@@ -981,7 +1013,7 @@ fun CameraFragment(sharedViewModel: SharedViewModel, outerNavController: NavHost
 
         if(isRecording) {
 
-            object : CountDownTimer(45000, 1000) {
+            object : CountDownTimer(Constants.MEASURING_TIME, 1000) {
 
                 override fun onTick(p0: Long) {
                     cameraMessage = "Auto-stops in ${(p0 / 1000).toInt()} s"
