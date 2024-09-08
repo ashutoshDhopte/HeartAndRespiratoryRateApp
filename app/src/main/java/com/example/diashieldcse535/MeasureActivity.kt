@@ -70,11 +70,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -129,6 +131,13 @@ class MeasureActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        db = Room.databaseBuilder(
+            this.applicationContext,
+            Databases::class.java,
+            Constants.DATABASE_NAME
+        ).build()
+
         setContent {
 
             Home()
@@ -164,12 +173,6 @@ private fun Home(modifier: Modifier = Modifier){
     val outerNavController = rememberNavController()
     val context = LocalContext.current
     val sharedViewModel: SharedViewModel = viewModel()
-
-    db = Room.databaseBuilder(
-        context,
-        Databases::class.java,
-        "monitor-db"
-    ).build()
 
     DiaShieldCSE535Theme {
         Scaffold(
@@ -283,7 +286,7 @@ private fun MeasureFragment(context: Context, navController: NavHostController, 
                 RespiratoryFragment(context, sharedViewModel)
             }
             composable(Fragments.SymptomFragment.route){
-                SymptomFragment(context)
+                SymptomFragment(sharedViewModel)
             }
         }
         Card(
@@ -445,20 +448,24 @@ private fun saveAndNavToMainActivity(context: Context, sharedViewModel: SharedVi
 
         delay(1000)
 
-        try{
+        var isDataSaved = true
 
+        try{
             saveMonitorData(sharedViewModel)
 
-            navToMainActivity(context)
-
-            Toast.makeText(context, "Data saved!!", Toast.LENGTH_LONG).show()
-
         }catch (e: Exception){
+            isDataSaved = false
             e.message?.let { Log.d("Room exception", it) }
             Toast.makeText(context, "Failed to save data: ${e.message}", Toast.LENGTH_LONG).show()
 
         }finally {
+
             sharedViewModel.isSavingInProgress = false
+
+            if(isDataSaved){
+                Toast.makeText(context, "Data saved!!", Toast.LENGTH_LONG).show()
+                navToMainActivity(context)
+            }
         }
     }
 }
@@ -794,12 +801,12 @@ private fun ProcessingMessage(modifier: Modifier = Modifier){
 }
 
 @Composable
-private fun SymptomFragment(context: Context, modifier: Modifier = Modifier){
+private fun SymptomFragment(sharedViewModel: SharedViewModel, modifier: Modifier = Modifier){
 
     val symptomMap = remember {
         mutableStateMapOf<String, MutableState<Float>>().apply {
             Constants.Symptom.symptomKeys.forEach { key ->
-                this[key] = mutableStateOf(0f)
+                this[key] = mutableFloatStateOf(0f)
             }
         }
     }
@@ -835,7 +842,9 @@ private fun SymptomFragment(context: Context, modifier: Modifier = Modifier){
                         Slider(
                             enabled = true,
                             value = symptom.value,
-                            onValueChange = { symptomMap[Constants.Symptom.symptomKeys[i]]?.value = it },
+                            onValueChange = {
+                                updateSymptomsData(symptomMap, i, it, sharedViewModel)
+                            },
                             steps = 4,
                             valueRange = 0f..5f,
                             colors = SliderDefaults.colors(
@@ -846,6 +855,26 @@ private fun SymptomFragment(context: Context, modifier: Modifier = Modifier){
                 }
             }
         }
+    }
+}
+
+private fun updateSymptomsData(symptomMap: SnapshotStateMap<String, MutableState<Float>>, i: Int, value: Float,
+                               sharedViewModel: SharedViewModel){
+
+    val key = Constants.Symptom.symptomKeys[i]
+    symptomMap[key]?.value = value
+
+    when(key){
+        "Nausea" -> sharedViewModel.symptomNausea = value.toInt()
+        "Headache" -> sharedViewModel.symptomHeadache = value.toInt()
+        "Diarrhea" -> sharedViewModel.symptomDiarrhea = value.toInt()
+        "Soar throat" -> sharedViewModel.symptomSoarThroat = value.toInt()
+        "Fever" -> sharedViewModel.symptomFever = value.toInt()
+        "Muscle ache" -> sharedViewModel.symptomMuscleAche = value.toInt()
+        "Loss of smell and taste" -> sharedViewModel.symptomLossOfSmellAndTaste = value.toInt()
+        "Cough" -> sharedViewModel.symptomCough = value.toInt()
+        "Shortness of breath" -> sharedViewModel.symptomShortnessOfBreath = value.toInt()
+        "Feeling tired" -> sharedViewModel.symptomFeelingTired = value.toInt()
     }
 }
 
