@@ -125,7 +125,7 @@ private fun Content(monitor: Monitor?, modifier: Modifier = Modifier){
                             modifier = modifier.weight(1f)
                         )
                         Text(
-                            monitor?.heartRate.toString(),
+                            (monitor?.heartRate ?: 0).toString(),
                             textAlign = TextAlign.End
                         )
                     }
@@ -140,7 +140,7 @@ private fun Content(monitor: Monitor?, modifier: Modifier = Modifier){
                             modifier = modifier.weight(1f)
                         )
                         Text(
-                            monitor?.respiratoryRate.toString(),
+                            (monitor?.respiratoryRate ?: 0).toString(),
                             textAlign = TextAlign.End
                         )
                     }
