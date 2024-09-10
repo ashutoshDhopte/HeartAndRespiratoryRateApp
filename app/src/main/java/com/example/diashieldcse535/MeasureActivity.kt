@@ -716,7 +716,7 @@ private fun RespiratoryFragment(context: Context, sharedViewModel: SharedViewMod
 
         if(isMeasuring){
 
-            object: CountDownTimer(Constants.MEASURING_TIME, 1000){
+            currentTimer = object: CountDownTimer(Constants.MEASURING_TIME, 1000){
 
                 override fun onTick(p0: Long) {
                     timeRemaining = (p0 / 1000).toInt()
@@ -726,6 +726,9 @@ private fun RespiratoryFragment(context: Context, sharedViewModel: SharedViewMod
                     unRegisterSensorListener(sharedViewModel)
                 }
             }.start()
+
+        }else{
+            stopTimer()
         }
     }
 
@@ -991,6 +994,12 @@ fun MeasurePreview(modifier: Modifier = Modifier) {
     RespiratoryFragment(LocalContext.current, viewModel())
 }
 
+var currentTimer: CountDownTimer? = null
+
+fun stopTimer(){
+    currentTimer?.cancel()
+}
+
 @Composable
 fun CameraFragment(sharedViewModel: SharedViewModel, outerNavController: NavHostController, modifier: Modifier = Modifier) {
 
@@ -1013,7 +1022,7 @@ fun CameraFragment(sharedViewModel: SharedViewModel, outerNavController: NavHost
 
         if(isRecording) {
 
-            object : CountDownTimer(Constants.MEASURING_TIME, 1000) {
+            currentTimer = object : CountDownTimer(Constants.MEASURING_TIME, 1000) {
 
                 override fun onTick(p0: Long) {
                     cameraMessage = "Auto-stops in ${(p0 / 1000).toInt()} s"
@@ -1025,6 +1034,9 @@ fun CameraFragment(sharedViewModel: SharedViewModel, outerNavController: NavHost
                     captureVideo(context, cameraController, sharedViewModel, outerNavController)
                 }
             }.start()
+
+        }else{
+            stopTimer()
         }
     }
 
