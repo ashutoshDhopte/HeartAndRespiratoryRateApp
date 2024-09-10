@@ -147,8 +147,7 @@ class MeasureActivity : ComponentActivity() {
 
     companion object{
         val CAMERAX_PERMISSION = arrayOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.CAMERA
         )
     }
 
@@ -1141,7 +1140,7 @@ fun captureVideo(context: Context, cameraController: LifecycleCameraController,
 
     recording = cameraController.startRecording(
         FileOutputOptions.Builder(file).build(),
-        AudioConfig.create(true),
+        AudioConfig.create(false),
         ContextCompat.getMainExecutor(context)
     ){ event ->
         when (event){
