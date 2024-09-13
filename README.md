@@ -77,3 +77,6 @@
 **Q3)** A common assumption is mobile computing is mostly about app development. After completing Project 1 and reading both papers, have your views changed? If yes, what do you think mobile computing is about and why? If no, please explain why you still think mobile computing is mostly about app development, providing examples to support your viewpoint.
 
 **Ans.** 
+
+          As a developer with 3.5 years of experience in more than one industry, I know that developing a system is not mainly about coding, but to listening and identifying client's problems and solving them efficiently. 
+          My views were the same from the start, that mobile computing is not about app development, but app development is just a part of it. The main purpose and the reasoning behind mobile computing is to identifying the problems and solving them using mobile hardwares, software and network. Because no matter how good you code, breakthrough happens with an idea. Mobile computing focuses on how we perceive real-world and interact with it remotely. Just as we developed project 1, using the sensors and hardwares we figured out to measure something which requires more advance tech. This innovation is what mobile computing is about. Coding can be done is any language, using any libraries and software versions, but this idea is the foundation.
