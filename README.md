@@ -4,6 +4,56 @@
 
 **Ans.** 
 
+          a. Hardware
+                    i. Android phone with a camera, flashlight, an accelerometer, and Android 14.
+                    ii. Macbook with Apple silicon.
+          b. Software
+                    i. Android studio to build the app.
+                    ii. Data structure of the resulting database, including the name and type of the columns.
+          c. Libraries
+                    i. Jetpack Compose - Kotlin
+                    ii. CameraX
+                    iii. Room database
+          d. Algorithm
+                    i. To use the intensity of red color in a video to measure the heart rate.
+                    ii. To calculate the respiratory rate using the 3-dimensional values from the accelerometer.
+                    
+         Algorithm -- Respiratory Rate Calculation:
+         
+          1: Input: 𝑎𝑐𝑐𝑒𝑙𝑉𝑎𝑙𝑢𝑒𝑠𝑋, 𝑎𝑐𝑐𝑒𝑙𝑉𝑎𝑙𝑢𝑒𝑠𝑌, 𝑎𝑐𝑐𝑒𝑙𝑉𝑎𝑙𝑢𝑒𝑠𝑍
+          2: Output: Respiratory Rate (Integer)
+          3: 𝑝𝑟𝑒𝑣𝑖𝑜𝑢𝑠𝑉𝑎𝑙𝑢𝑒 ← 10
+          4: 𝑐𝑢𝑟𝑟𝑒𝑛𝑡𝑉𝑎𝑙𝑢𝑒 ← 0
+          5: 𝑘 ← 0
+          6: for 𝑖 ∈ [11, 𝑎𝑐𝑐𝑒𝑙𝑉𝑎𝑙𝑢𝑒𝑠𝑌 .𝑠𝑖𝑧𝑒] do
+          7: 𝑐𝑢𝑟𝑟𝑒𝑛𝑡𝑉𝑎𝑙𝑢𝑒 ←√︁ 𝑎𝑐𝑐𝑒𝑙𝑉𝑎𝑙𝑢𝑒𝑠𝑋 [𝑖]2 + 𝑎𝑐𝑐𝑒𝑙𝑉𝑎𝑙𝑢𝑒𝑠𝑌 [𝑖]2 + 𝑎𝑐𝑐𝑒𝑙𝑉𝑎𝑙𝑢𝑒𝑠𝑍 [𝑖]2
+          8: if | 𝑝𝑟𝑒𝑣𝑖𝑜𝑢𝑠𝑉𝑎𝑙𝑢𝑒 − 𝑐𝑢𝑟𝑟𝑒𝑛𝑡𝑉𝑎𝑙𝑢𝑒| > 0.15 then
+          9: 𝑘 ← 𝑘 + 1
+          10: end if
+          11: 𝑝𝑟𝑒𝑣𝑖𝑜𝑢𝑠𝑉𝑎𝑙𝑢𝑒 ← 𝑐𝑢𝑟𝑟𝑒𝑛𝑡𝑉𝑎𝑙𝑢𝑒
+          12: end for
+          13: 𝑟𝑒𝑡 ← [𝑘 / 45]
+          14: return ⌊𝑟𝑒𝑡 × 30⌋
+          
+          Table structure:
+          
+          monitor(
+                 monitor_id int primary_key auto_increment,
+                 heart_rate int,
+                 respiratory_rate int,
+                 symptom_rate_nausea int,
+                 symptom_rate_headache int,
+                 symptom_rate_diarrhea int,
+                 symptom_rate_soar_throat int,
+                 symptom_rate_fever int,
+                 symptom_rate_muscle_ache int,
+                 symptom_rate_loss_of_smell_or_taste int,
+                 symptom_rate_cough int,
+                 symptom_rate_shortness_of_breath int,
+                 symptom_rate_feeling_tired int,
+                 created_on long
+          )
+
 **Q2)** In Project 1 you have stored the user’s symptoms data in the local server. Using the bHealthy application suite how can you provide feedback to the user and develop a novel application to improve context sensing and use that to generate the model of the user?
 
 **Ans.**  
