@@ -6,7 +6,9 @@
 
 **Q2)** In Project 1 you have stored the user’s symptoms data in the local server. Using the bHealthy application suite how can you provide feedback to the user and develop a novel application to improve context sensing and use that to generate the model of the user?
 
-**Ans.**  a. Using bHealthy I can collect additional user data such as ECG, EEG, distance traveled, heart rate, etc.
+**Ans.**  
+
+          a. Using bHealthy I can collect additional user data such as ECG, EEG, distance traveled, heart rate, etc.
           
           b. These data can be summarized daily, weekly, monthly, and yearly. 
           
