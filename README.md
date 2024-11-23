@@ -1,4 +1,4 @@
-# Context Monitoring Application
+# Heart and Respiratory Rate App
 
 **Q1)** Imagine you are new to the programming world and not proficient enough in coding. But, you have a brilliant idea where you want to develop a context-sensing application like Project 1.  You come across the Heath-Dev paper and want it to build your application. Specify what Specifications you should provide to the Health-Dev framework to develop the code ideally.
 
