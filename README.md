@@ -1,10 +1,13 @@
 # Heart and Respiratory Rate App
 
+<img width="1328" alt="Screenshot 2025-02-12 at 21 29 05" src="https://github.com/user-attachments/assets/0c3b57e9-71ad-4232-b1f4-cf19b4dbf5cf" />
+
 **Q1)** Imagine you are new to the programming world and not proficient enough in coding. But, you have a brilliant idea where you want to develop a context-sensing application like Project 1.  You come across the Heath-Dev paper and want it to build your application. Specify what Specifications you should provide to the Health-Dev framework to develop the code ideally.
 
 **Ans.** 
 
           a. Hardware
+
                     i. Android phone with a camera, flashlight, an accelerometer, and Android 14.
                     ii. Macbook with Apple silicon.
           b. Software
